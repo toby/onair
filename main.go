@@ -29,7 +29,7 @@ type Client struct {
 	lastID       uint64
 	track        Track
 	sessions     bool
-	Tracks       chan Track
+	showAlbum    bool
 }
 
 // Item is an XML entry from the shairport-sync-metadata file.
@@ -86,7 +86,11 @@ func (me *Client) handle(i *Item) {
 		log.Println("Metadata end")
 		if me.lastID != me.track.ID {
 			me.lastID = me.track.ID
-			me.Tracks <- me.track
+			if me.showAlbum {
+				fmt.Printf("%s - %s - %s\n", me.track.Artist, me.track.Album, me.track.Name)
+			} else {
+				fmt.Printf("%s - %s\n", me.track.Artist, me.track.Name)
+			}
 		}
 	case "asal":
 		a := string(i.Data())
@@ -134,39 +138,37 @@ func (me *Client) handle(i *Item) {
 }
 
 func (me *Client) open() {
-	me.Tracks = make(chan Track, 0)
-	go func() {
-		f, err := os.Open(me.metadataPath)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+	f, err := os.Open(me.metadataPath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer f.Close()
+	decoder := xml.NewDecoder(f)
+	for {
+		t, _ := decoder.Token()
+		if t == nil {
+			log.Println("No more XML")
+			break
 		}
-		defer f.Close()
-		decoder := xml.NewDecoder(f)
-		for {
-			t, _ := decoder.Token()
-			if t == nil {
-				log.Println("No more XML")
-				break
-			}
-			switch v := t.(type) {
-			case xml.StartElement:
-				var i Item
-				decoder.DecodeElement(&i, &v)
-				err := i.decode()
-				if err == nil {
-					me.handle(&i)
-				} else {
-					log.Printf("Invalid item: %s\n", err)
-				}
+		switch v := t.(type) {
+		case xml.StartElement:
+			var i Item
+			decoder.DecodeElement(&i, &v)
+			err := i.decode()
+			if err == nil {
+				me.handle(&i)
+			} else {
+				log.Printf("Invalid item: %s\n", err)
 			}
 		}
-	}()
+	}
 }
 
 func main() {
 	v := flag.Bool("v", false, "verbose")
 	n := flag.Bool("n", false, "echo blank newline when playback stops")
+	a := flag.Bool("a", false, "display album name")
 	m := flag.String("m", "/tmp/shairport-sync-metadata", "`path` to shairport-sync-metadata file")
 	flag.Parse()
 	if *v == false {
@@ -176,8 +178,6 @@ func main() {
 	c := Client{}
 	c.metadataPath = *m
 	c.sessions = *n
+	c.showAlbum = *a
 	c.open()
-	for t := range c.Tracks {
-		fmt.Printf("%s - %s - %s\n", t.Artist, t.Album, t.Name)
-	}
 }
