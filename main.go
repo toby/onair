@@ -48,7 +48,7 @@ func (me *Item) Data() []byte {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	return d
+	return d[:me.Length]
 }
 
 func (me *Item) decode() error {

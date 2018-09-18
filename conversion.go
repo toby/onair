@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 )
 
-func byteUInt64(d []byte) (uint64, error) {
+func byteUInt64(b []byte) (uint64, error) {
 	var i uint64
-	buf := bytes.NewReader(d)
+	buf := bytes.NewReader(b)
 	err := binary.Read(buf, binary.BigEndian, &i)
 	if err != nil {
 		return i, err
@@ -15,9 +15,9 @@ func byteUInt64(d []byte) (uint64, error) {
 	return i, nil
 }
 
-func byteUInt32(d []byte) (uint32, error) {
+func byteUInt32(b []byte) (uint32, error) {
 	var i uint32
-	buf := bytes.NewReader(d)
+	buf := bytes.NewReader(b)
 	err := binary.Read(buf, binary.BigEndian, &i)
 	if err != nil {
 		return i, err
@@ -25,9 +25,9 @@ func byteUInt32(d []byte) (uint32, error) {
 	return i, nil
 }
 
-func byteUInt8(d []byte) (uint8, error) {
+func byteUInt8(b []byte) (uint8, error) {
 	var i uint8
-	buf := bytes.NewReader(d)
+	buf := bytes.NewReader(b)
 	err := binary.Read(buf, binary.BigEndian, &i)
 	if err != nil {
 		return i, err
