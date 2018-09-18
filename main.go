@@ -28,6 +28,7 @@ type Client struct {
 	metadataPath string
 	lastID       uint64
 	track        Track
+	sessions     bool
 	Tracks       chan Track
 }
 
@@ -70,6 +71,10 @@ func (me *Client) handle(i *Item) {
 		log.Println("Play stream begin")
 	case "pend":
 		log.Println("Play stream end")
+		if me.sessions {
+			fmt.Println()
+			me.lastID = 0
+		}
 	case "pfls":
 		log.Println("Play stream flush")
 	case "prsm":
@@ -161,14 +166,16 @@ func (me *Client) open() {
 
 func main() {
 	v := flag.Bool("v", false, "verbose")
-	s := flag.String("m", "/tmp/shairport-sync-metadata", "`path` to shairport-sync-metadata file")
+	n := flag.Bool("n", false, "echo blank newline when playback stops")
+	m := flag.String("m", "/tmp/shairport-sync-metadata", "`path` to shairport-sync-metadata file")
 	flag.Parse()
 	if *v == false {
 		log.SetOutput(ioutil.Discard)
 	}
 	log.Println("On Air")
 	c := Client{}
-	c.metadataPath = *s
+	c.metadataPath = *m
+	c.sessions = *n
 	c.open()
 	for t := range c.Tracks {
 		fmt.Printf("%s - %s - %s\n", t.Artist, t.Album, t.Name)

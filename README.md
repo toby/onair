@@ -23,5 +23,6 @@ onair [flags]
 FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
+  -n	   Print a blank newline when playback stops
   -v	   Verbose
 ```
