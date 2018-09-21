@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
+	"strings"
 )
 
 // Track is generated from a sequence of metadata items from
@@ -28,6 +30,7 @@ type Client struct {
 	metadataPath string
 	lastID       uint64
 	track        Track
+	port         int
 	sessions     bool
 	showAlbum    bool
 	dacpID       string
@@ -152,7 +155,7 @@ func (me *Client) handle(i *Item) {
 	}
 }
 
-func (me *Client) open() {
+func (me *Client) openMetadata() {
 	f, err := os.Open(me.metadataPath)
 	if err != nil {
 		fmt.Println(err)
@@ -180,7 +183,31 @@ func (me *Client) open() {
 	}
 }
 
+func (me *Client) start() {
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", me.port))
+	if err != nil {
+		if strings.Index(err.Error(), "in use") != -1 {
+			fmt.Fprintln(os.Stderr, "Already running.")
+			return
+		} else {
+			panic(err)
+		}
+	}
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				println("Error accept:", err.Error())
+				return
+			}
+			log.Printf("Connected: %v", conn)
+		}
+	}()
+	me.openMetadata()
+}
+
 func main() {
+	p := flag.Int("p", 22212, "control port")
 	v := flag.Bool("v", false, "verbose")
 	n := flag.Bool("n", false, "echo blank newline when playback stops")
 	a := flag.Bool("a", false, "display album name")
@@ -194,5 +221,6 @@ func main() {
 	c.metadataPath = *m
 	c.sessions = *n
 	c.showAlbum = *a
-	c.open()
+	c.port = *p
+	c.start()
 }
