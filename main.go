@@ -132,6 +132,15 @@ func (me *Client) handle(i *Item) {
 		}
 		log.Printf("ID\t\t%d\n", id)
 		me.track.ID = id
+	case "daid":
+		d := string(i.Data())
+		log.Printf("DACP-ID:\t\t%s\n", d)
+	case "acre":
+		a := string(i.Data())
+		log.Printf("Active-Remote Token:\t\t%s\n", a)
+	case "dapo":
+		d := string(i.Data())
+		log.Printf("Control port:\t\t%s\n", d)
 	default:
 		log.Printf("Unlogged:\t%s %s\n", i.Type, i.Code)
 	}
