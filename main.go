@@ -30,6 +30,9 @@ type Client struct {
 	track        Track
 	sessions     bool
 	showAlbum    bool
+	dacpID       string
+	remoteToken  string
+	remotePort   string
 }
 
 // Item is an XML entry from the shairport-sync-metadata file.
@@ -135,12 +138,15 @@ func (me *Client) handle(i *Item) {
 	case "daid":
 		d := string(i.Data())
 		log.Printf("DACP-ID:\t\t%s\n", d)
+		me.dacpID = d
 	case "acre":
-		a := string(i.Data())
-		log.Printf("Active-Remote Token:\t\t%s\n", a)
+		t := string(i.Data())
+		log.Printf("Active-Remote Token:\t\t%s\n", t)
+		me.remoteToken = t
 	case "dapo":
-		d := string(i.Data())
-		log.Printf("Control port:\t\t%s\n", d)
+		p := string(i.Data())
+		log.Printf("Control port:\t\t%s\n", p)
+		me.remotePort = p
 	default:
 		log.Printf("Unlogged:\t%s %s\n", i.Type, i.Code)
 	}
