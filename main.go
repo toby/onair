@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/textproto"
 	"os"
 	"strings"
 )
@@ -71,7 +73,7 @@ func (me *Item) decode() error {
 	return nil
 }
 
-func (me *Client) handle(i *Item) {
+func (me *Client) handleItem(i *Item) {
 	switch i.Code {
 	case "pbeg":
 		log.Println("Play stream begin")
@@ -155,6 +157,19 @@ func (me *Client) handle(i *Item) {
 	}
 }
 
+func (me *Client) handleConnection(conn *net.TCPConn) {
+	r := bufio.NewReader(conn)
+	tp := textproto.NewReader(r)
+	defer conn.Close()
+	for {
+		line, err := tp.ReadLine()
+		if err != nil {
+			break
+		}
+		fmt.Printf("%s\n", line)
+	}
+}
+
 func (me *Client) openMetadata() {
 	f, err := os.Open(me.metadataPath)
 	if err != nil {
@@ -175,7 +190,7 @@ func (me *Client) openMetadata() {
 			decoder.DecodeElement(&i, &v)
 			err := i.decode()
 			if err == nil {
-				me.handle(&i)
+				me.handleItem(&i)
 			} else {
 				log.Printf("Invalid item: %s\n", err)
 			}
@@ -184,10 +199,20 @@ func (me *Client) openMetadata() {
 }
 
 func (me *Client) start() {
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", me.port))
+	address := net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: me.port}
+	listener, err := net.ListenTCP("tcp", &address)
 	if err != nil {
 		if strings.Index(err.Error(), "in use") != -1 {
 			fmt.Fprintln(os.Stderr, "Already running.")
+			conn, err := net.DialTCP("tcp", &net.TCPAddr{IP: net.ParseIP("127.0.01")}, &address)
+			if err != nil {
+				log.Println("borked")
+				panic(err)
+			}
+			log.Println("Connected")
+			w := bufio.NewWriter(conn)
+			tw := textproto.NewWriter(w)
+			tw.PrintfLine("CMD %s", "skip")
 			return
 		} else {
 			panic(err)
@@ -195,12 +220,13 @@ func (me *Client) start() {
 	}
 	go func() {
 		for {
-			conn, err := listener.Accept()
+			conn, err := listener.AcceptTCP()
 			if err != nil {
 				println("Error accept:", err.Error())
 				return
 			}
 			log.Printf("Connected: %v", conn)
+			go me.handleConnection(conn)
 		}
 	}()
 	me.openMetadata()
