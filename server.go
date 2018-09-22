@@ -29,12 +29,12 @@ type TrackSource interface {
 	RegisterTrackOutChan(chan<- Track)
 }
 
-// TrackSink provides an method for registering an output channel of played Tracks
+// TrackSink provides an method for registering a channel of played Tracks
 type TrackSink interface {
 	RegisterTrackInChan(<-chan Track)
 }
 
-// Server handles control messages and watches for shairport-sync metadata
+// Server manages track flow and control commands
 type Server struct {
 	port   int
 	tracks chan Track
@@ -53,11 +53,6 @@ func NewServer(port int, source TrackSource, sink TrackSink) Server {
 	source.RegisterTrackOutChan(s.tracks)
 	sink.RegisterTrackInChan(s.tracks)
 	return s
-}
-
-// Tracks returns the output channel of Tracks from TrackSources
-func (me *Server) Tracks() <-chan Track {
-	return me.tracks
 }
 
 // Start listens for control commands. This method blocks until a termination
