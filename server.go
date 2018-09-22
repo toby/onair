@@ -27,7 +27,6 @@ type Track struct {
 // played.
 type TrackSource interface {
 	RegisterTrackOutChan(chan<- Track)
-	Start()
 }
 
 // TrackSink provides an method for registering an output channel of played Tracks
@@ -61,7 +60,8 @@ func (me *Server) Tracks() <-chan Track {
 	return me.tracks
 }
 
-// Start watching for shairport-sync metadata
+// Start listens for control commands. This method blocks until a termination
+// signal is received.
 func (me *Server) Start() {
 	address := net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: me.port}
 	listener, err := net.ListenTCP("tcp", &address)
@@ -95,7 +95,6 @@ func (me *Server) Start() {
 				go me.handleConnection(conn)
 			}
 		}()
-		me.source.Start()
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs

@@ -20,11 +20,6 @@ type ShairportClient struct {
 	metadataPath string
 }
 
-// RegisterTrackOutChan satisfied the onair.TrackSource interface
-func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
-	me.tracks = c
-}
-
 // Item is an XML entry from the shairport-sync-metadata file.
 type Item struct {
 	Type        string `xml:"type"`
@@ -39,8 +34,14 @@ func NewShairportClient(metadataPath string) ShairportClient {
 	return ShairportClient{metadataPath: metadataPath}
 }
 
+// RegisterTrackOutChan satisfied the onair.TrackSource interface
+func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
+	me.tracks = c
+	me.start()
+}
+
 // Start watching for shairport-sync metadata
-func (me *ShairportClient) Start() {
+func (me *ShairportClient) start() {
 	go func() {
 		f, err := os.Open(me.metadataPath)
 		if err != nil {
