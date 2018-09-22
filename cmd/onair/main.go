@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -18,9 +19,22 @@ func main() {
 	if *v == false {
 		log.SetOutput(ioutil.Discard)
 	}
-	log.Println("On Air")
-	sc := onair.NewShairportClient(*m)
-	so := onair.StdOut{ShowAlbum: *a, ShowPlaybackStop: *s}
-	server := onair.NewServer(*p, &sc, &so)
-	server.Start()
+	args := flag.Args()
+	if len(args) == 0 { // No command sent, use server mode
+		source := onair.NewShairportClient(*m)
+		sink := onair.StdOut{ShowAlbum: *a, ShowPlaybackStop: *s}
+		server := onair.NewServer(*p, &source, &sink)
+		server.Listen()
+	} else { // Command supplied, use client mode
+		client, err := onair.NewClient(*p)
+		defer client.Close()
+		if err != nil {
+			panic(err)
+		}
+		err = client.Send(args[0])
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
 }

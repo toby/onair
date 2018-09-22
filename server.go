@@ -23,6 +23,14 @@ type Track struct {
 	Time     uint32
 }
 
+// Server manages track flow and control commands
+type Server struct {
+	port   int
+	tracks chan Track
+	source TrackSource
+	sink   TrackSink
+}
+
 // TrackSource allows a player to register a channel of Tracks to send when
 // played.
 type TrackSource interface {
@@ -32,14 +40,6 @@ type TrackSource interface {
 // TrackSink provides an method for registering a channel of played Tracks
 type TrackSink interface {
 	RegisterTrackInChan(<-chan Track)
-}
-
-// Server manages track flow and control commands
-type Server struct {
-	port   int
-	tracks chan Track
-	source TrackSource
-	sink   TrackSink
 }
 
 // NewServer returns a configured Server
@@ -55,34 +55,20 @@ func NewServer(port int, source TrackSource, sink TrackSink) Server {
 	return s
 }
 
-// Start listens for control commands. This method blocks until a termination
-// signal is received.
-func (me *Server) Start() {
+// Listen for control commands. This method blocks until a termination signal
+// is received.
+func (me *Server) Listen() {
 	address := net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: me.port}
 	listener, err := net.ListenTCP("tcp", &address)
 	defer listener.Close()
-	if err != nil {
-		if strings.Index(err.Error(), "in use") == -1 {
-			panic(err)
-		}
-		fmt.Fprintln(os.Stderr, "Already running.")
-		conn, err := net.DialTCP("tcp", &net.TCPAddr{IP: net.ParseIP("127.0.01")}, &address)
-		defer conn.Close()
-		if err != nil {
-			log.Println("borked")
-			panic(err)
-		}
-		log.Println("Connected")
-		w := bufio.NewWriter(conn)
-		tw := textproto.NewWriter(w)
-		tw.PrintfLine("CMD %s", "skip")
-	} else {
+	if err == nil {
+		log.Printf("Listening on port %d", me.port)
 		go func() {
 			for {
 				conn, err := listener.AcceptTCP()
 				if err != nil {
 					if strings.Index(err.Error(), "closed network connection") == -1 {
-						println("Error accept:", err.Error())
+						log.Printf("Error accept: %s", err.Error())
 					}
 					return
 				}
@@ -93,6 +79,11 @@ func (me *Server) Start() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
+	} else {
+		if strings.Index(err.Error(), "in use") == -1 {
+			panic(err)
+		}
+		log.Printf("Already listening")
 	}
 }
 
