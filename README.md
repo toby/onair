@@ -10,7 +10,7 @@ A simple client for displaying track metadata from shairport-sync.
 ## Installing
 
 ```
-go get github.com/toby/onair
+go get github.com/toby/onair/cmd/onair
 ```
 
 ## Usage
