@@ -20,8 +20,8 @@ type ShairportClient struct {
 	metadataPath string
 }
 
-// RegisterTrackChan satisfied the onair.TrackSource interface
-func (me *ShairportClient) RegisterTrackChan(c chan<- Track) {
+// RegisterTrackOutChan satisfied the onair.TrackSource interface
+func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
 	me.tracks = c
 }
 
@@ -88,6 +88,7 @@ func (me *ShairportClient) handleItem(i *Item) {
 	case "pend":
 		log.Println("Play stream end")
 		me.lastID = 0
+		me.tracks <- Track{}
 	case "pfls":
 		log.Println("Play stream flush")
 	case "prsm":
