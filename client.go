@@ -8,8 +8,7 @@ import (
 	"net/textproto"
 )
 
-// Client represents a connetion to an already running server, used to sending
-// commands
+// Client connects to an onair Server for sending playback control commands
 type Client struct {
 	commands map[string]bool
 	port     int
@@ -17,7 +16,7 @@ type Client struct {
 	conn     net.Conn
 }
 
-// NewClient attempts to create a new Client connected to port
+// NewClient attempts to create a new Client connected to a server port
 func NewClient(port int) (Client, error) {
 	commands := map[string]bool{
 		"skip":  true,

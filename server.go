@@ -31,13 +31,12 @@ type Server struct {
 	sink   TrackSink
 }
 
-// TrackSource allows a player to register a channel of Tracks to send when
-// played.
+// TrackSource hook to Track output channel for track sources
 type TrackSource interface {
 	RegisterTrackOutChan(chan<- Track)
 }
 
-// TrackSink provides an method for registering a channel of played Tracks
+// TrackSink hook to Track input channel for track sinks
 type TrackSink interface {
 	RegisterTrackInChan(<-chan Track)
 }
@@ -61,30 +60,30 @@ func (me *Server) Listen() {
 	address := net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: me.port}
 	listener, err := net.ListenTCP("tcp", &address)
 	defer listener.Close()
-	if err == nil {
-		log.Printf("Listening on port %d", me.port)
-		go func() {
-			for {
-				conn, err := listener.AcceptTCP()
-				if err != nil {
-					if strings.Index(err.Error(), "closed network connection") == -1 {
-						log.Printf("Error accept: %s", err.Error())
-					}
-					return
-				}
-				log.Printf("Connected: %v", conn)
-				go me.handleConnection(conn)
-			}
-		}()
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		<-sigs
-	} else {
+	if err != nil {
 		if strings.Index(err.Error(), "in use") == -1 {
 			panic(err)
 		}
 		log.Printf("Already listening")
+		return
 	}
+	log.Printf("Listening on port %d", me.port)
+	go func() {
+		for {
+			conn, err := listener.AcceptTCP()
+			if err != nil {
+				if strings.Index(err.Error(), "closed network connection") == -1 {
+					log.Printf("Error accept: %s", err.Error())
+				}
+				return
+			}
+			log.Printf("Connected: %v", conn)
+			go me.handleConnection(conn)
+		}
+	}()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	<-sigs
 }
 
 func (me *Server) handleConnection(conn *net.TCPConn) {
