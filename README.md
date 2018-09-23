@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/toby/onair?status.svg)](http://godoc.org/github.com/toby/onair)
 
-On Air manages music playback, metadata storage and display. It currently
+`onair` manages music playback, metadata storage and display. It currently
 supports shairport-sync as a playback source.
 
 ## Requirements
