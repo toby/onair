@@ -18,14 +18,8 @@ type Client struct {
 
 // NewClient attempts to create a new Client connected to a server port.
 func NewClient(port int) (Client, error) {
-	commands := map[string]bool{
-		"skip":  true,
-		"back":  true,
-		"pause": true,
-	}
 	c := Client{
-		port:     port,
-		commands: commands,
+		port: port,
 	}
 	err := c.connect()
 	return c, err
@@ -33,7 +27,7 @@ func NewClient(port int) (Client, error) {
 
 // Send will attempt to send a valid command to the server.
 func (me *Client) Send(cmd string) error {
-	_, ok := me.commands[cmd]
+	_, ok := validCommands[cmd]
 	if !ok {
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}

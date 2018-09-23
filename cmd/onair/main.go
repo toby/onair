@@ -21,9 +21,9 @@ func main() {
 	}
 	args := flag.Args()
 	if len(args) == 0 { // No command sent, use server mode
-		source := onair.NewShairportClient(*m)
+		sp := onair.NewShairportClient(*m)
 		sink := onair.StdOut{ShowAlbum: *a, ShowPlaybackStop: *s}
-		server := onair.NewServer(*p, &source, &sink)
+		server := onair.NewServer(*p, &sp, &sink, &sp)
 		server.Listen()
 	} else { // Command supplied, use client mode
 		client, err := onair.NewClient(*p)

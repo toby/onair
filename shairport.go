@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"time"
 
@@ -21,6 +22,7 @@ type ShairportClient struct {
 	dacpID       string
 	remoteToken  string
 	remotePort   string
+	remoteHost   net.IP
 	metadataPath string
 }
 
@@ -29,8 +31,8 @@ func (me *ShairportClient) ServiceName() string {
 	return fmt.Sprintf("iTunes_Ctrl_%s", me.dacpID)
 }
 
-// Item is an XML entry from the shairport-sync-metadata file.
-type Item struct {
+// MetadataItem is an XML entry from the shairport-sync-metadata file.
+type MetadataItem struct {
 	Type        string `xml:"type"`
 	Code        string `xml:"code"`
 	Length      int    `xml:"length"`
@@ -49,6 +51,10 @@ func (me *ShairportClient) connectCtrlService() error {
 			log.Printf("%s %s", entry.Instance, me.ServiceName())
 			if entry.Instance == me.ServiceName() {
 				log.Printf("%s\n", entry.Instance)
+				log.Printf("%s\n", entry.Text)
+				if len(entry.AddrIPv4) > 0 {
+					me.remoteHost = entry.AddrIPv4[0]
+				}
 				return
 			}
 		}
@@ -96,11 +102,11 @@ func (me *ShairportClient) start() {
 			}
 			switch v := t.(type) {
 			case xml.StartElement:
-				var i Item
+				var i MetadataItem
 				decoder.DecodeElement(&i, &v)
 				err := i.decode()
 				if err == nil {
-					me.handleItem(&i)
+					me.handleMetadataItem(&i)
 				} else {
 					log.Printf("Invalid item: %s\n", err)
 				}
@@ -110,7 +116,7 @@ func (me *ShairportClient) start() {
 }
 
 // Data decodes the base64 data stored in an item.
-func (me *Item) Data() []byte {
+func (me *MetadataItem) Data() []byte {
 	d := make([]byte, base64.StdEncoding.DecodedLen(len(me.EncodedData)))
 	_, err := base64.StdEncoding.Decode(d, me.EncodedData)
 	if err != nil {
@@ -120,7 +126,22 @@ func (me *Item) Data() []byte {
 	return d[:me.Length]
 }
 
-func (me *ShairportClient) handleItem(i *Item) {
+// Skip to the next track.
+func (me *ShairportClient) Skip() {
+	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "skip")
+}
+
+// Back to the last track.
+func (me *ShairportClient) Back() {
+	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "back")
+}
+
+// Pause toggles pause state.
+func (me *ShairportClient) Pause() {
+	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "pause")
+}
+
+func (me *ShairportClient) handleMetadataItem(i *MetadataItem) {
 	switch i.Code {
 	case "pbeg":
 		log.Println("Play stream begin")
@@ -199,7 +220,7 @@ func (me *ShairportClient) handleItem(i *Item) {
 	}
 }
 
-func (me *Item) decode() error {
+func (me *MetadataItem) decode() error {
 	t, err := hex.DecodeString(me.Type)
 	if err != nil {
 		return err

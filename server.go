@@ -5,7 +5,6 @@ package onair
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"net"
 	"net/textproto"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 )
+
+var validCommands = map[string]bool{"skip": true, "back": true, "pause": true}
 
 // Track is the common model for an album track.
 type Track struct {
@@ -28,10 +29,11 @@ type Track struct {
 
 // Server manages track flow and control commands.
 type Server struct {
-	port   int
-	tracks chan Track
-	source TrackSource
-	sink   TrackSink
+	port    int
+	tracks  chan Track
+	source  TrackSource
+	sink    TrackSink
+	control PlaybackControl
 }
 
 // TrackSource provides an interface playback sources need to implement. As
@@ -50,13 +52,22 @@ type TrackSink interface {
 	RegisterTrackInChan(<-chan Track)
 }
 
+// PlaybackControl provides an interface for source specific playback
+// controllers to implement.
+type PlaybackControl interface {
+	Skip()
+	Back()
+	Pause()
+}
+
 // NewServer returns a configured Server.
-func NewServer(port int, source TrackSource, sink TrackSink) Server {
+func NewServer(port int, source TrackSource, sink TrackSink, control PlaybackControl) Server {
 	s := Server{
-		port:   port,
-		source: source,
-		sink:   sink,
-		tracks: make(chan Track, 0),
+		port:    port,
+		source:  source,
+		sink:    sink,
+		control: control,
+		tracks:  make(chan Track, 0),
 	}
 	source.RegisterTrackOutChan(s.tracks)
 	sink.RegisterTrackInChan(s.tracks)
@@ -100,10 +111,17 @@ func (me *Server) handleConnection(conn *net.TCPConn) {
 	tp := textproto.NewReader(r)
 	defer conn.Close()
 	for {
-		line, err := tp.ReadLine()
+		cmd, err := tp.ReadLine()
 		if err != nil {
 			break
 		}
-		fmt.Printf("%s\n", line)
+		switch cmd {
+		case "skip":
+			me.control.Skip()
+		case "back":
+			me.control.Back()
+		case "pause":
+			me.control.Pause()
+		}
 	}
 }
