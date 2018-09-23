@@ -36,8 +36,8 @@ COMMANDS
 
 ## Server Mode
 
-Running `onair` with no commands outputs each new track to standard out. If the
-`-s` flag is supplied, `onair` will output a blank new line when there is a
+Running `onair` with no commands prints each new track to standard out. If the
+`-s` flag is supplied, `onair` will output a blank newline when there is a
 stop in playback. This can be useful if you want to track your listening
 sessions or for updating a UI to clear now playing information.
 
@@ -45,6 +45,6 @@ sessions or for updating a UI to clear now playing information.
 
 When run with a command argument, `onair` will connect to an already running
 `onair` server and tell it to issue the given command to the connected playback
-device. If no server, you'll need to launch one. If the server has not yet seen
-the required playback ids from the source, you may need to reconnect your
-Airplay device.
+device. If no server is running, you'll need to launch one. If the server has
+not yet seen the required playback ids from the source, you may need to
+reconnect your Airplay device.
