@@ -31,13 +31,19 @@ type Server struct {
 	sink   TrackSink
 }
 
-// TrackSource hook to Track output channel for track sources
+// TrackSource provides an interface playback sources need to implement. As
+// tracks are played, they should be pushed into the provided channel. When
+// playbacks stops, they should push a blank Track.
 type TrackSource interface {
+	// RegisterTrackOutChan supplies the source a Track output channel
 	RegisterTrackOutChan(chan<- Track)
 }
 
-// TrackSink hook to Track input channel for track sinks
+// TrackSink hook to Track input channel for track sinks. Sinks can pull tracks
+// from the provided channel and store or render them as appropriate. Playback
+// stops are represented by blank Tracks.
 type TrackSink interface {
+	// RegisterTrackInChan supplies the sink a Track input channel
 	RegisterTrackInChan(<-chan Track)
 }
 
