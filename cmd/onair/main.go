@@ -19,7 +19,7 @@ FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
   -a	   Display album name
-  -n	   Print a blank newline when playback stops
+  -s	   Print a blank newline when playback stops
   -v	   Verbose
 COMMANDS
   skip     Skips to next track

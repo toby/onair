@@ -18,8 +18,7 @@ go get github.com/toby/onair/cmd/onair
 
 ## Usage
 
-After starting, `onair` will display `ARTIST - ALBUM - TRACK` on new lines as
-each track plays.
+On Air will run continuously to print out metadata and act as a control for shairport-sync.
 
 ```
 onair [flags] [COMMAND]
@@ -27,10 +26,25 @@ FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
   -a	   Display album name
-  -n	   Print a blank newline when playback stops
+  -s	   Print a blank newline when playback stops
   -v	   Verbose
 COMMANDS
   skip     Skips to next track
   back     Play last track
   pause    Toggle pause
 ```
+
+## Server Mode
+
+Running `onair` with no commands outputs each new track to standard out. If the
+`-s` flag is supplied, `onair` will output a blank new line when there is a
+stop in playback. This can be useful if you want to track your listening
+sessions or for updating a UI to clear now playing information.
+
+## Client Mode
+
+When run with a command argument, `onair` will connect to an already running
+`onair` server and tell it to issue the given command to the connected playback
+device. If no server, you'll need to launch one. If the server has not yet seen
+the required playback ids from the source, you may need to reconnect your
+Airplay device.
