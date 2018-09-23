@@ -23,12 +23,12 @@ func (me *StdOut) printTrack(t Track) {
 func (me *StdOut) RegisterTrackInChan(ts <-chan Track) {
 	go func() {
 		for t := range ts {
-			if me.ShowPlaybackStop {
-				blank := Track{}
-				if t == blank {
+			blank := Track{}
+			if t == blank {
+				if me.ShowPlaybackStop {
 					fmt.Println()
-					continue
 				}
+				continue
 			}
 			me.printTrack(t)
 		}
