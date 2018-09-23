@@ -39,9 +39,9 @@ type TrackSource interface {
 	RegisterTrackOutChan(chan<- Track)
 }
 
-// TrackSink hook to Track input channel for track sinks. Sinks can pull tracks
-// from the provided channel and store or render them as appropriate. Playback
-// stops are represented by blank Tracks.
+// TrackSink provides an interface track sinks need to implement. Sinks can
+// pull tracks from the provided channel and store or render them as
+// appropriate. When playback stops, sinks will receive a blank track.
 type TrackSink interface {
 	// RegisterTrackInChan supplies the sink a Track input channel
 	RegisterTrackInChan(<-chan Track)
