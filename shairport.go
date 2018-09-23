@@ -1,12 +1,16 @@
 package onair
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
+	"time"
+
+	"github.com/grandcat/zeroconf"
 )
 
 // ShairportClient watches the shairport-sync-metadata file and handles Track parsing.
@@ -20,12 +24,46 @@ type ShairportClient struct {
 	metadataPath string
 }
 
+// ServiceName returns the DACP mDNS service name based on the dacpID.
+func (me *ShairportClient) ServiceName() string {
+	return fmt.Sprintf("iTunes_Ctrl_%s", me.dacpID)
+}
+
 // Item is an XML entry from the shairport-sync-metadata file.
 type Item struct {
 	Type        string `xml:"type"`
 	Code        string `xml:"code"`
 	Length      int    `xml:"length"`
 	EncodedData []byte `xml:"data"`
+}
+
+func (me *ShairportClient) connectCtrlService() error {
+	resolver, err := zeroconf.NewResolver()
+	if err != nil {
+		log.Fatalln("Failed to initialize resolver:", err.Error())
+	}
+
+	entries := make(chan *zeroconf.ServiceEntry)
+	go func(results <-chan *zeroconf.ServiceEntry) {
+		for entry := range results {
+			log.Printf("%s %s", entry.Instance, me.ServiceName())
+			if entry.Instance == me.ServiceName() {
+				log.Printf("%s\n", entry.Instance)
+				return
+			}
+		}
+		log.Println("No more entries.")
+	}(entries)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	err = resolver.Browse(ctx, "_dacp._tcp", "local.", entries)
+	if err != nil {
+		log.Fatalln("Failed to browse:", err.Error())
+	}
+
+	<-ctx.Done()
+	return nil
 }
 
 // NewShairportClient returns a ShairportClient that watches metadataPath for shairport-sync
@@ -147,6 +185,7 @@ func (me *ShairportClient) handleItem(i *Item) {
 		d := string(i.Data())
 		log.Printf("DACP-ID:\t\t%s\n", d)
 		me.dacpID = d
+		go me.connectCtrlService()
 	case "acre":
 		t := string(i.Data())
 		log.Printf("Active-Remote Token:\t\t%s\n", t)
