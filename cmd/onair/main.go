@@ -5,9 +5,31 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 
 	"github.com/toby/onair"
 )
+
+const usage = `onair [flags] [COMMAND]
+
+When no commands are issues, onair will run in server mode and watch for track
+metadata. A server must be active and running to issue a command.
+
+FLAGS:
+  -h       Help
+  -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
+  -a	   Display album name
+  -n	   Print a blank newline when playback stops
+  -v	   Verbose
+COMMANDS
+  skip     Skips to next track
+  back     Play last track
+  pause    Toggle pause
+`
+
+func defaultUsage() {
+	fmt.Fprintf(flag.CommandLine.Output(), usage)
+}
 
 func main() {
 	p := flag.Int("p", 22212, "control port")
@@ -15,6 +37,7 @@ func main() {
 	s := flag.Bool("s", false, "echo blank newline when playback stops")
 	a := flag.Bool("a", false, "display album name")
 	m := flag.String("m", "/tmp/shairport-sync-metadata", "`path` to shairport-sync-metadata file")
+	flag.Usage = defaultUsage
 	flag.Parse()
 	if *v == false {
 		log.SetOutput(ioutil.Discard)
@@ -27,13 +50,16 @@ func main() {
 		server.Listen()
 	} else { // Command supplied, use client mode
 		client, err := onair.NewClient(*p)
-		defer client.Close()
 		if err != nil {
-			panic(err)
+			if strings.Index(err.Error(), "connection refused") != -1 {
+				fmt.Println("Cannot connect to server, make sure `onair` is running with no commands")
+			}
+			log.Fatalln(err)
 		}
+		defer client.Close()
 		err = client.Send(args[0])
 		if err != nil {
-			fmt.Println(err)
+			log.Fatalln(err)
 		}
 	}
 

@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/grandcat/zeroconf"
@@ -48,11 +50,11 @@ func (me *ShairportClient) connectCtrlService() error {
 	entries := make(chan *zeroconf.ServiceEntry)
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		for entry := range results {
-			log.Printf("%s %s", entry.Instance, me.ServiceName())
-			if entry.Instance == me.ServiceName() {
-				log.Printf("%s\n", entry.Instance)
-				log.Printf("%s\n", entry.Text)
+			if strings.Index(entry.Instance, me.dacpID) != -1 {
+				log.Printf("mDNS Instance %s\n", entry.Instance)
+				log.Printf("mDNS Port %d\n", entry.Port)
 				if len(entry.AddrIPv4) > 0 {
+					log.Println("Found matching service record")
 					me.remoteHost = entry.AddrIPv4[0]
 				}
 				return
@@ -128,17 +130,37 @@ func (me *MetadataItem) Data() []byte {
 
 // Skip to the next track.
 func (me *ShairportClient) Skip() {
-	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "skip")
+	me.clientRequest("nextitem")
 }
 
 // Back to the last track.
 func (me *ShairportClient) Back() {
-	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "back")
+	me.clientRequest("previtem")
 }
 
 // Pause toggles pause state.
 func (me *ShairportClient) Pause() {
-	log.Printf("%s:%s - %s - %s - %s", me.remoteHost.String(), me.remotePort, me.dacpID, me.remoteToken, "pause")
+	me.clientRequest("playpause")
+}
+
+func (me *ShairportClient) clientRequest(cmd string) {
+	if me.remoteHost == nil {
+		log.Printf("Cannot send iTunes command: %s, have not received airport connect messages yet. Try reconnecting your iTunes source", cmd)
+		return
+	}
+	client := &http.Client{}
+	url := fmt.Sprintf("http://%s:%s/ctrl-int/1/%s", me.remoteHost.String(), me.remotePort, cmd)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Add("Active-Remote", me.remoteToken)
+	log.Printf("iTunes request: %s", url)
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Printf("Request status: %s", res.Status)
 }
 
 func (me *ShairportClient) handleMetadataItem(i *MetadataItem) {
