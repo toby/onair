@@ -29,18 +29,18 @@ type Item struct {
 }
 
 // NewShairportClient returns a ShairportClient that watches metadataPath for shairport-sync
-// metadata
+// metadata.
 func NewShairportClient(metadataPath string) ShairportClient {
 	return ShairportClient{metadataPath: metadataPath}
 }
 
-// RegisterTrackOutChan satisfied the onair.TrackSource interface
+// RegisterTrackOutChan satisfied the onair.TrackSource interface.
 func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
 	me.tracks = c
 	me.start()
 }
 
-// Start watching for shairport-sync metadata
+// Start watching for shairport-sync metadata.
 func (me *ShairportClient) start() {
 	go func() {
 		f, err := os.Open(me.metadataPath)

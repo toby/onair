@@ -1,3 +1,6 @@
+// Package onair provides a server and client for managing music playback,
+// metadata storage and display. It currently supports shairport-sync as a
+// playback source.
 package onair
 
 import (
@@ -12,7 +15,7 @@ import (
 	"syscall"
 )
 
-// Track is the common model for an album track
+// Track is the common model for an album track.
 type Track struct {
 	Artist   string
 	Album    string
@@ -23,7 +26,7 @@ type Track struct {
 	Time     uint32
 }
 
-// Server manages track flow and control commands
+// Server manages track flow and control commands.
 type Server struct {
 	port   int
 	tracks chan Track
@@ -47,7 +50,7 @@ type TrackSink interface {
 	RegisterTrackInChan(<-chan Track)
 }
 
-// NewServer returns a configured Server
+// NewServer returns a configured Server.
 func NewServer(port int, source TrackSource, sink TrackSink) Server {
 	s := Server{
 		port:   port,

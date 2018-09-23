@@ -19,7 +19,7 @@ func (me *StdOut) printTrack(t Track) {
 	}
 }
 
-// RegisterTrackInChan satisfies the TrackSink interface
+// RegisterTrackInChan satisfies the TrackSink interface.
 func (me *StdOut) RegisterTrackInChan(ts <-chan Track) {
 	go func() {
 		for t := range ts {

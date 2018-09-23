@@ -1,5 +1,7 @@
 # On Air
 
+[![GoDoc](https://godoc.org/github.com/toby/onair?status.svg)](http://godoc.org/github.com/toby/onair)
+
 A simple client for displaying track metadata from shairport-sync.
 
 ## Requirements

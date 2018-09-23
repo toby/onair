@@ -8,7 +8,7 @@ import (
 	"net/textproto"
 )
 
-// Client connects to an onair Server for sending playback control commands
+// Client connects to an onair Server for sending playback control commands.
 type Client struct {
 	commands map[string]bool
 	port     int
@@ -16,7 +16,7 @@ type Client struct {
 	conn     net.Conn
 }
 
-// NewClient attempts to create a new Client connected to a server port
+// NewClient attempts to create a new Client connected to a server port.
 func NewClient(port int) (Client, error) {
 	commands := map[string]bool{
 		"skip":  true,
@@ -31,7 +31,7 @@ func NewClient(port int) (Client, error) {
 	return c, err
 }
 
-// Send will attempt to send a valid command to the server
+// Send will attempt to send a valid command to the server.
 func (me *Client) Send(cmd string) error {
 	_, ok := me.commands[cmd]
 	if !ok {
@@ -40,7 +40,7 @@ func (me *Client) Send(cmd string) error {
 	return me.writer.PrintfLine("%s", cmd)
 }
 
-// Close cleans up a client's network connections
+// Close cleans up a client's network connections.
 func (me *Client) Close() {
 	me.conn.Close()
 }
