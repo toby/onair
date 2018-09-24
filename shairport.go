@@ -41,39 +41,6 @@ type MetadataItem struct {
 	EncodedData []byte `xml:"data"`
 }
 
-func (me *ShairportClient) connectCtrlService() error {
-	resolver, err := zeroconf.NewResolver()
-	if err != nil {
-		log.Fatalln("Failed to initialize resolver:", err.Error())
-	}
-
-	entries := make(chan *zeroconf.ServiceEntry)
-	go func(results <-chan *zeroconf.ServiceEntry) {
-		for entry := range results {
-			if strings.Index(entry.Instance, me.dacpID) != -1 {
-				log.Printf("mDNS Instance %s\n", entry.Instance)
-				log.Printf("mDNS Port %d\n", entry.Port)
-				if len(entry.AddrIPv4) > 0 {
-					log.Println("Found matching service record")
-					me.remoteHost = entry.AddrIPv4[0]
-				}
-				return
-			}
-		}
-		log.Println("No more entries.")
-	}(entries)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	err = resolver.Browse(ctx, "_dacp._tcp", "local.", entries)
-	if err != nil {
-		log.Fatalln("Failed to browse:", err.Error())
-	}
-
-	<-ctx.Done()
-	return nil
-}
-
 // NewShairportClient returns a ShairportClient that watches metadataPath for shairport-sync
 // metadata.
 func NewShairportClient(metadataPath string) ShairportClient {
@@ -84,6 +51,32 @@ func NewShairportClient(metadataPath string) ShairportClient {
 func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
 	me.tracks = c
 	me.start()
+}
+
+// Data decodes the base64 data stored in an item.
+func (me *MetadataItem) Data() []byte {
+	d := make([]byte, base64.StdEncoding.DecodedLen(len(me.EncodedData)))
+	_, err := base64.StdEncoding.Decode(d, me.EncodedData)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return d[:me.Length]
+}
+
+// Skip to the next track.
+func (me *ShairportClient) Skip() {
+	me.clientRequest("nextitem")
+}
+
+// Back to the last track.
+func (me *ShairportClient) Back() {
+	me.clientRequest("previtem")
+}
+
+// Pause toggles pause state.
+func (me *ShairportClient) Pause() {
+	me.clientRequest("playpause")
 }
 
 // Start watching for shairport-sync metadata.
@@ -117,30 +110,37 @@ func (me *ShairportClient) start() {
 	}()
 }
 
-// Data decodes the base64 data stored in an item.
-func (me *MetadataItem) Data() []byte {
-	d := make([]byte, base64.StdEncoding.DecodedLen(len(me.EncodedData)))
-	_, err := base64.StdEncoding.Decode(d, me.EncodedData)
+func (me *ShairportClient) connectCtrlService() error {
+	resolver, err := zeroconf.NewResolver()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalln("Failed to initialize resolver:", err.Error())
 	}
-	return d[:me.Length]
-}
 
-// Skip to the next track.
-func (me *ShairportClient) Skip() {
-	me.clientRequest("nextitem")
-}
+	entries := make(chan *zeroconf.ServiceEntry)
+	go func(results <-chan *zeroconf.ServiceEntry) {
+		for entry := range results {
+			if strings.Index(entry.Instance, me.dacpID) != -1 {
+				log.Printf("mDNS Instance %s\n", entry.Instance)
+				log.Printf("mDNS Port %d\n", entry.Port)
+				if len(entry.AddrIPv4) > 0 {
+					log.Println("Found matching service record")
+					me.remoteHost = entry.AddrIPv4[0]
+				}
+				return
+			}
+		}
+		log.Println("No more entries.")
+	}(entries)
 
-// Back to the last track.
-func (me *ShairportClient) Back() {
-	me.clientRequest("previtem")
-}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	err = resolver.Browse(ctx, "_dacp._tcp", "local.", entries)
+	if err != nil {
+		log.Fatalln("Failed to browse:", err.Error())
+	}
 
-// Pause toggles pause state.
-func (me *ShairportClient) Pause() {
-	me.clientRequest("playpause")
+	<-ctx.Done()
+	return nil
 }
 
 func (me *ShairportClient) clientRequest(cmd string) {

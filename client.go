@@ -10,10 +10,9 @@ import (
 
 // Client connects to an onair Server for sending playback control commands.
 type Client struct {
-	commands map[string]bool
-	port     int
-	writer   *textproto.Writer
-	conn     net.Conn
+	port   int
+	writer *textproto.Writer
+	conn   net.Conn
 }
 
 // NewClient attempts to create a new Client connected to a server port.
