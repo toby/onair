@@ -64,19 +64,69 @@ func (me *MetadataItem) Data() []byte {
 	return d[:me.Length]
 }
 
-// Skip to the next track.
-func (me *ShairportClient) Skip() {
+// Play starts playback.
+func (me *ShairportClient) Play() {
+	me.clientRequest("play")
+}
+
+// Pause pauses playback.
+func (me *ShairportClient) Pause() {
+	me.clientRequest("pause")
+}
+
+// Next plays the next next item in the playlist.
+func (me *ShairportClient) Next() {
 	me.clientRequest("nextitem")
 }
 
-// Back to the last track.
-func (me *ShairportClient) Back() {
+// Previous plays the previous item in the playlist.
+func (me *ShairportClient) Previous() {
 	me.clientRequest("previtem")
 }
 
-// Pause toggles pause state.
-func (me *ShairportClient) Pause() {
+// Stop playback.
+func (me *ShairportClient) Stop() {
+	me.clientRequest("stop")
+}
+
+// FastForward begins fast forward, PlayResume() should be called to return to playback.
+func (me *ShairportClient) FastForward() {
+	me.clientRequest("beginff")
+}
+
+// Rewind begins rewinding, PlayResume() should be called to return to playback.
+func (me *ShairportClient) Rewind() {
+	me.clientRequest("beginrew")
+}
+
+// PlayResume is called after a FastForward() or Rewind() call to resume playback.
+func (me *ShairportClient) PlayResume() {
+	me.clientRequest("playresume")
+}
+
+// TogglePause toggles pause state.
+func (me *ShairportClient) TogglePause() {
 	me.clientRequest("playpause")
+}
+
+// ToggleMute toggles mute state.
+func (me *ShairportClient) ToggleMute() {
+	me.clientRequest("mutetoggle")
+}
+
+// Shuffle the tracks in a playlist.
+func (me *ShairportClient) Shuffle() {
+	me.clientRequest("shuffle_songs")
+}
+
+// VolumeUp increases the volume.
+func (me *ShairportClient) VolumeUp() {
+	me.clientRequest("volumeup")
+}
+
+// VolumeDown decreases the volume.
+func (me *ShairportClient) VolumeDown() {
+	me.clientRequest("volumedown")
 }
 
 // Start watching for shairport-sync metadata.

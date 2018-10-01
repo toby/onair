@@ -26,7 +26,7 @@ func NewClient(port int) (Client, error) {
 
 // Send will attempt to send a valid command to the server.
 func (me *Client) Send(cmd string) error {
-	_, ok := validCommands[cmd]
+	_, ok := Commands[cmd]
 	if !ok {
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}

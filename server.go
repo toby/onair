@@ -14,7 +14,23 @@ import (
 	"syscall"
 )
 
-var validCommands = map[string]bool{"skip": true, "back": true, "pause": true}
+// Commands are valid client commands for controlling playback. They mirror the
+// Airport DACP commands.
+var Commands = map[string]string{
+	"beginff":       "Begin fast forward",
+	"beginrew":      "Begin rewind",
+	"mutetoggle":    "Toggle mute status",
+	"nextitem":      "Play next item in playlist",
+	"previtem":      "Play previous item in playlist",
+	"pause":         "Pause playback",
+	"playpause":     "Toggle between play and pause",
+	"play":          "Start playback",
+	"stop":          "Stop playback",
+	"playresume":    "Play after fast forward or rewind",
+	"shuffle_songs": "Shuffle playlist",
+	"volumedown":    "Turn audio volume down",
+	"volumeup":      "Turn audio volume up",
+}
 
 // Track is the common model for an album track.
 type Track struct {
@@ -55,9 +71,32 @@ type TrackSink interface {
 // PlaybackControl provides an interface for source specific playback
 // controllers to implement.
 type PlaybackControl interface {
-	Skip()
-	Back()
+	// Play starts playback.
+	Play()
+	// Pause pauses playback.
 	Pause()
+	// Next plays the next next item in the playlist.
+	Next()
+	// Previous plays the previous item in the playlist.
+	Previous()
+	// Stop playback.
+	Stop()
+	// FastForward begins fast forward, PlayResume() should be called to return to playback.
+	FastForward()
+	// Rewind begins rewinding, PlayResume() should be called to return to playback.
+	Rewind()
+	// PlayResume is called after a FastForward() or Rewind() call to resume playback.
+	PlayResume()
+	// TogglePause toggles pause state.
+	TogglePause()
+	// ToggleMute toggles mute state.
+	ToggleMute()
+	// Shuffle the tracks in a playlist.
+	Shuffle()
+	// VolumeUp increases the volume.
+	VolumeUp()
+	// VolumeDown decreases the volume.
+	VolumeDown()
 }
 
 // NewServer returns a configured Server.
@@ -116,12 +155,34 @@ func (me *Server) handleConnection(conn *net.TCPConn) {
 			break
 		}
 		switch cmd {
-		case "skip":
-			me.control.Skip()
-		case "back":
-			me.control.Back()
+		case "play":
+			me.control.Play()
 		case "pause":
 			me.control.Pause()
+		case "nextitem":
+			me.control.Next()
+		case "previtem":
+			me.control.Previous()
+		case "stop":
+			me.control.Stop()
+		case "beginff":
+			me.control.FastForward()
+		case "beginrew":
+			me.control.Rewind()
+		case "playresume":
+			me.control.PlayResume()
+		case "playpause":
+			me.control.TogglePause()
+		case "mutetoggle":
+			me.control.ToggleMute()
+		case "shuffle_songs":
+			me.control.Shuffle()
+		case "volumedown":
+			me.control.VolumeUp()
+		case "volumeup":
+			me.control.VolumeDown()
+		default:
+			log.Printf("Bad command: '%s'", cmd)
 		}
 	}
 }
