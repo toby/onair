@@ -29,9 +29,19 @@ FLAGS:
   -s	   Print a blank newline when playback stops
   -v	   Verbose
 COMMANDS
-  skip     Skips to next track
-  back     Play last track
-  pause    Toggle pause
+  play                          Start playback
+  pause                         Pause playback
+  playpause                     Toggle between play and pause
+  skip, next, nextitem          Play next item in playlist
+  back, previous, previtem      Play previous item in playlist
+  stop                          Stop playback
+  shuffle, shuffle_songs        Shuffle playlist
+  ff, fastforward, beginff      Begin fast forward
+  rew, rewind, beginrew         Begin rewind
+  playresume                    Play after fast forward or rewind
+  up, volup, volumedown         Turn audio volume down
+  down, voldown, volumeup       Turn audio volume up
+  mute, mutetoggle              Toggle mute status
 ```
 
 ## Server Mode
