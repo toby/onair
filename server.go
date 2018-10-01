@@ -14,24 +14,6 @@ import (
 	"syscall"
 )
 
-// Commands are valid client commands for controlling playback. They mirror the
-// Airport DACP commands.
-var Commands = map[string]string{
-	"beginff":       "Begin fast forward",
-	"beginrew":      "Begin rewind",
-	"mutetoggle":    "Toggle mute status",
-	"nextitem":      "Play next item in playlist",
-	"previtem":      "Play previous item in playlist",
-	"pause":         "Pause playback",
-	"playpause":     "Toggle between play and pause",
-	"play":          "Start playback",
-	"stop":          "Stop playback",
-	"playresume":    "Play after fast forward or rewind",
-	"shuffle_songs": "Shuffle playlist",
-	"volumedown":    "Turn audio volume down",
-	"volumeup":      "Turn audio volume up",
-}
-
 // Track is the common model for an album track.
 type Track struct {
 	Artist   string
