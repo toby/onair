@@ -19,7 +19,7 @@ FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
   -p       onair control port (default: 22212)
-  -u       shairport-sync metadata receive port (default: disabled)
+  -u       shairport-sync metadata receive udp port (default: disabled)
   -a	   Display album name
   -s	   Print a blank newline when playback stops
   -v	   Verbose
