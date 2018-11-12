@@ -26,6 +26,7 @@ type ShairportClient struct {
 	remotePort   string
 	remoteHost   net.IP
 	metadataPath string
+	udpPort      int
 }
 
 // ServiceName returns the DACP mDNS service name based on the dacpID.
@@ -35,33 +36,25 @@ func (me *ShairportClient) ServiceName() string {
 
 // MetadataItem is an XML entry from the shairport-sync-metadata file.
 type MetadataItem struct {
-	Type        string `xml:"type"`
-	Code        string `xml:"code"`
-	Length      int    `xml:"length"`
-	EncodedData []byte `xml:"data"`
+	Type   string `xml:"type"`
+	Code   string `xml:"code"`
+	Length int    `xml:"length"`
+	Data   []byte `xml:"data"`
 }
 
 // NewShairportClient returns a ShairportClient that watches metadataPath for shairport-sync
 // metadata.
-func NewShairportClient(metadataPath string) ShairportClient {
-	return ShairportClient{metadataPath: metadataPath}
+func NewShairportClient(metadataPath string, udpPort int) ShairportClient {
+	return ShairportClient{
+		metadataPath: metadataPath,
+		udpPort:      udpPort,
+	}
 }
 
 // RegisterTrackOutChan satisfied the onair.TrackSource interface.
 func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
 	me.tracks = c
 	me.start()
-}
-
-// Data decodes the base64 data stored in an item.
-func (me *MetadataItem) Data() []byte {
-	d := make([]byte, base64.StdEncoding.DecodedLen(len(me.EncodedData)))
-	_, err := base64.StdEncoding.Decode(d, me.EncodedData)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	return d[:me.Length]
 }
 
 // Play starts playback.
@@ -158,6 +151,39 @@ func (me *ShairportClient) start() {
 			}
 		}
 	}()
+	if me.udpPort != 0 {
+		go func() {
+			addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", me.udpPort))
+			if err != nil {
+				panic(err)
+			}
+			log.Printf("Listening UDP on %v", addr)
+			conn, err := net.ListenUDP("udp", addr)
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+			for {
+				buf := make([]byte, 1000)
+				n, err := conn.Read(buf)
+				if err != nil {
+					break
+				}
+				log.Printf("Read %d bytes", n)
+				msg := string(buf)
+				if len(msg) >= 8 {
+					log.Println(string(buf))
+					mi := MetadataItem{
+						Type:   msg[0:4],
+						Code:   msg[4:8],
+						Length: len(msg),
+						Data:   buf[8:n],
+					}
+					me.handleMetadataItem(&mi)
+				}
+			}
+		}()
+	}
 }
 
 func (me *ShairportClient) connectCtrlService() error {
@@ -235,56 +261,56 @@ func (me *ShairportClient) handleMetadataItem(i *MetadataItem) {
 			me.tracks <- me.track
 		}
 	case "asal":
-		a := string(i.Data())
+		a := string(i.Data)
 		log.Printf("Album:\t\t%s\n", a)
 		me.track.Album = a
 	case "asar":
-		a := string(i.Data())
+		a := string(i.Data)
 		log.Printf("Artist:\t\t%s\n", a)
 		me.track.Artist = a
 	case "ascp":
-		c := string(i.Data())
+		c := string(i.Data)
 		log.Printf("Composer:\t%s\n", c)
 		me.track.Composer = c
 	case "astm":
-		t, err := byteUInt32(i.Data())
+		t, err := byteUInt32(i.Data)
 		if err != nil {
 			log.Printf("bad astm: %s\n", err)
 		}
 		log.Printf("Time:\t\t%d\n", t)
 		me.track.Time = t
 	case "asgn":
-		g := string(i.Data())
+		g := string(i.Data)
 		log.Printf("Genre:\t\t%s\n", g)
 		me.track.Genre = g
 	case "minm":
-		n := string(i.Data())
+		n := string(i.Data)
 		log.Printf("Name:\t\t%s\n", n)
 		me.track.Name = n
 	case "caps":
-		s, err := byteUInt8(i.Data())
+		s, err := byteUInt8(i.Data)
 		if err != nil {
 			log.Printf("bad caps: %s\n", err)
 		}
 		log.Printf("Play Status:\t%v\n", s)
 	case "mper":
-		id, err := byteUInt64(i.Data())
+		id, err := byteUInt64(i.Data)
 		if err != nil {
 			log.Printf("bad mper: %s\n", err)
 		}
 		log.Printf("ID\t\t%d\n", id)
 		me.track.ID = id
 	case "daid":
-		d := string(i.Data())
+		d := string(i.Data)
 		log.Printf("DACP-ID:\t\t%s\n", d)
 		me.dacpID = d
 		go me.connectCtrlService()
 	case "acre":
-		t := string(i.Data())
+		t := string(i.Data)
 		log.Printf("Active-Remote Token:\t\t%s\n", t)
 		me.remoteToken = t
 	case "dapo":
-		p := string(i.Data())
+		p := string(i.Data)
 		log.Printf("Control port:\t\t%s\n", p)
 		me.remotePort = p
 	default:
@@ -303,5 +329,13 @@ func (me *MetadataItem) decode() error {
 		return err
 	}
 	me.Code = string(c)
+
+	d := make([]byte, base64.StdEncoding.DecodedLen(len(me.Data)))
+	_, err = base64.StdEncoding.Decode(d, me.Data)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	me.Data = d[:me.Length]
 	return nil
 }

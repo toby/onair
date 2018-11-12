@@ -18,6 +18,8 @@ metadata. A server must be active and running to issue a command.
 FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
+  -p       onair control port (default: 22212)
+  -u       shairport-sync metadata receive port (default: disabled)
   -a	   Display album name
   -s	   Print a blank newline when playback stops
   -v	   Verbose
@@ -42,7 +44,8 @@ func defaultUsage() {
 }
 
 func main() {
-	p := flag.Int("p", 22212, "control port")
+	p := flag.Int("p", 22212, "onair control port")
+	u := flag.Int("u", 0, "udp metadata port")
 	v := flag.Bool("v", false, "verbose")
 	s := flag.Bool("s", false, "echo blank newline when playback stops")
 	a := flag.Bool("a", false, "display album name")
@@ -54,7 +57,7 @@ func main() {
 	}
 	args := flag.Args()
 	if len(args) == 0 { // No command sent, use server mode
-		sp := onair.NewShairportClient(*m)
+		sp := onair.NewShairportClient(*m, *u)
 		sink := onair.StdOut{ShowAlbum: *a, ShowPlaybackStop: *s}
 		server := onair.NewServer(*p, &sp, &sink, &sp)
 		server.Listen()

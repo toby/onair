@@ -25,6 +25,8 @@ onair [flags] [COMMAND]
 FLAGS:
   -h       Help
   -m PATH  Path to shairport-sync-metadata file (default "/tmp/shairport-sync-metadata")
+  -p       onair control port
+  -u       shairport-sync metadata receive port
   -a	   Display album name
   -s	   Print a blank newline when playback stops
   -v	   Verbose
