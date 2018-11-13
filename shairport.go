@@ -176,7 +176,7 @@ func (me *ShairportClient) start() {
 					mi := MetadataItem{
 						Type:   msg[0:4],
 						Code:   msg[4:8],
-						Length: len(msg),
+						Length: n,
 						Data:   buf[8:n],
 					}
 					me.handleMetadataItem(&mi)
