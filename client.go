@@ -11,6 +11,7 @@ import (
 // Commands are valid client commands for controlling playback. They mirror the
 // Airport DACP commands.
 var Commands = map[string]string{
+	"display":       "Display currently playing track",
 	"play":          "Start playback",
 	"pause":         "Pause playback",
 	"playpause":     "Toggle between play and pause",
@@ -48,6 +49,7 @@ var CommandAliases = map[string]string{
 type Client struct {
 	port   int
 	writer *textproto.Writer
+	reader *textproto.Reader
 	conn   net.Conn
 }
 
@@ -70,7 +72,18 @@ func (me *Client) Send(cmd string) error {
 	if !ok {
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}
-	return me.writer.PrintfLine("%s", cmd)
+	err := me.writer.PrintfLine("%s", cmd)
+	if err != nil {
+		return err
+	}
+	if cmd == "display" {
+		resp, err := me.reader.ReadLine()
+		if err != nil {
+			return err
+		}
+		fmt.Println(resp)
+	}
+	return nil
 }
 
 // Close cleans up a client's network connections.
@@ -85,8 +98,10 @@ func (me *Client) connect() error {
 		return err
 	}
 	log.Println("Connected")
-	w := bufio.NewWriter(conn)
 	me.conn = conn
+	w := bufio.NewWriter(conn)
+	r := bufio.NewReader(conn)
 	me.writer = textproto.NewWriter(w)
+	me.reader = textproto.NewReader(r)
 	return nil
 }

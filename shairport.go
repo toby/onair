@@ -57,6 +57,14 @@ func (me *ShairportClient) RegisterTrackOutChan(c chan<- Track) {
 	me.start()
 }
 
+// Displays currently playing track
+func (me *ShairportClient) Display() string {
+	if me.track.Name != "" {
+		return fmt.Sprintf("%s - %s", me.track.Artist, me.track.Name)
+	}
+	return ""
+}
+
 // Play starts playback.
 func (me *ShairportClient) Play() {
 	me.clientRequest("play")

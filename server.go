@@ -53,6 +53,8 @@ type TrackSink interface {
 // PlaybackControl provides an interface for source specific playback
 // controllers to implement.
 type PlaybackControl interface {
+	// Displays the currently playing track
+	Display() string
 	// Play starts playback.
 	Play()
 	// Pause pauses playback.
@@ -129,14 +131,19 @@ func (me *Server) Listen() {
 
 func (me *Server) handleConnection(conn *net.TCPConn) {
 	r := bufio.NewReader(conn)
-	tp := textproto.NewReader(r)
+	tr := textproto.NewReader(r)
+	w := bufio.NewWriter(conn)
+	tw := textproto.NewWriter(w)
 	defer conn.Close()
 	for {
-		cmd, err := tp.ReadLine()
+		cmd, err := tr.ReadLine()
 		if err != nil {
 			break
 		}
 		switch cmd {
+		case "display":
+			np := me.control.Display()
+			tw.PrintfLine("%s", np)
 		case "play":
 			me.control.Play()
 		case "pause":
