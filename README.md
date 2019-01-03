@@ -31,6 +31,7 @@ FLAGS:
   -s	   Print a blank newline when playback stops
   -v	   Verbose
 COMMANDS
+  display                       Display the currently playing track
   play                          Start playback
   pause                         Pause playback
   playpause                     Toggle between play and pause
