@@ -93,7 +93,7 @@ func (me *Client) Close() {
 
 func (me *Client) connect() error {
 	address := net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: me.port}
-	conn, err := net.DialTCP("tcp", &net.TCPAddr{IP: net.ParseIP("127.0.01")}, &address)
+	conn, err := net.DialTCP("tcp", &net.TCPAddr{IP: net.ParseIP("127.0.0.1")}, &address)
 	if err != nil {
 		return err
 	}

@@ -42,8 +42,8 @@ COMMANDS
   ff, fastforward, beginff      Begin fast forward
   rew, rewind, beginrew         Begin rewind
   playresume                    Play after fast forward or rewind
-  up, volup, volumedown         Turn audio volume down
-  down, voldown, volumeup       Turn audio volume up
+  up, volup, volumeup           Turn audio volume down
+  down, voldown, volumedown     Turn audio volume up
   mute, mutetoggle              Toggle mute status
 ```
 
